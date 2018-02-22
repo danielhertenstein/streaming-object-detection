@@ -1,5 +1,6 @@
 import cv2
 from multiprocessing import Pool, Queue
+from multiprocessing.queues import Empty, Full
 import numpy as np
 import os
 import tensorflow as tf
@@ -57,37 +58,44 @@ def main():
     stream = WebcamWideoStream(src=0).start()
     fps = FPS().start()
 
-    while fps.num_frames < 100:
+    while fps.num_frames < 200:
         # Get a new frame
         frame = stream.read()
+        expanded_frame = np.expand_dims(frame, 0)
 
         # Give it to the detector process
-        expanded_frame = np.expand_dims(frame, 0)
-        input_queue.put(expanded_frame)
+        try:
+            input_queue.put_nowait(expanded_frame)
+        except Full:
+            pass
+
 
         # Get the detection results
-        output_dict = output_queue.get()
-        output_dict['num_detections'] = int(output_dict['num_detections'][0])
-        output_dict['detection_classes'] = output_dict['detection_classes'][0].astype(np.uint8)
-        output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
-        output_dict['detection_scores'] = output_dict['detection_scores'][0]
+        try:
+            output_dict = output_queue.get_nowait()
+            output_dict['num_detections'] = int(output_dict['num_detections'][0])
+            output_dict['detection_classes'] = output_dict['detection_classes'][0].astype(np.uint8)
+            output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
+            output_dict['detection_scores'] = output_dict['detection_scores'][0]
 
-        # Mark up the frame with the boxes
-        vis_util.visualize_boxes_and_labels_on_image_array(
-            frame,
-            output_dict['detection_boxes'],
-            output_dict['detection_classes'],
-            output_dict['detection_scores'],
-            category_index,
-            use_normalized_coordinates=True,
-            line_thickness=8,
-        )
+            # Mark up the frame with the boxes
+            vis_util.visualize_boxes_and_labels_on_image_array(
+                frame,
+                output_dict['detection_boxes'],
+                output_dict['detection_classes'],
+                output_dict['detection_scores'],
+                category_index,
+                use_normalized_coordinates=True,
+                line_thickness=8,
+            )
 
-        # Show the marked up frame
-        cv2.imshow("Frame", frame)
-        cv2.waitKey(1) & 0xFF
+            # Show the marked up frame
+            cv2.imshow("Frame", frame)
+            cv2.waitKey(1) & 0xFF
 
-        fps.update()
+            fps.update()
+        except Empty:
+            pass
 
     fps.stop()
     print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))

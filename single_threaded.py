@@ -39,7 +39,7 @@ def main():
     stream = cv2.VideoCapture(0)
     fps = FPS().start()
 
-    while fps.num_frames < 100:
+    while fps.num_frames < 200:
         # Get a new frame
         (grabbed, frame) = stream.read()
 
