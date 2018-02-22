@@ -69,7 +69,6 @@ def main():
         except Full:
             pass
 
-
         # Get the detection results
         try:
             output_dict = output_queue.get_nowait()
