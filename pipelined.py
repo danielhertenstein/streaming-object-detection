@@ -21,6 +21,9 @@ def capture(out_queue):
             out_queue.put(frame)
             counter += 1
 
+    # Teardown
+    stream.stop()
+
 
 def detect(in_queue, out_queue):
     # Setup
@@ -47,12 +50,14 @@ def detect(in_queue, out_queue):
     image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
 
     # Processing loop
-    while True:
+    counter = 0
+    while counter < 200:
         frame = in_queue.get()
         expanded_frame = np.expand_dims(frame, 0)
         output_dict = sess.run(tensor_dict, feed_dict={image_tensor: expanded_frame})
         output_dict['frame'] = frame
         out_queue.put(output_dict)
+        counter += 1
 
 
 def display(in_queue):
@@ -68,7 +73,8 @@ def display(in_queue):
     category_index = label_map_util.create_category_index(categories)
 
     # Processing loop
-    while True:
+    counter = 0
+    while counter < 200:
         output_dict = in_queue.get()
         frame = output_dict['frame']
 
@@ -86,6 +92,10 @@ def display(in_queue):
         # Show the marked up frame
         cv2.imshow("Frame", frame)
         cv2.waitKey(1) & 0xFF
+        counter += 1
+
+    # Teardown
+    cv2.destroyAllWindows()
 
 
 def main():
