@@ -1,3 +1,4 @@
+from ctypes import c_bool
 import cv2
 import multiprocessing
 import numpy as np
@@ -9,23 +10,21 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 
-def capture(out_queue):
+def capture(keep_running, out_queue):
     # Setup
     stream = WebcamWideoStream(src=0).start()
 
     # Processing loop
-    counter = 0
-    while counter < 200:
+    while keep_running.value is True:
         if out_queue.empty():
             frame = stream.read()
             out_queue.put(frame)
-            counter += 1
 
     # Teardown
     stream.stop()
 
 
-def detect(in_queue, out_queue):
+def detect(keep_running, in_queue, out_queue):
     # Setup
     cwd = os.getcwd()
     model_name = 'ssd_mobilenet_v1_coco_2017_11_17'
@@ -50,14 +49,12 @@ def detect(in_queue, out_queue):
     image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
 
     # Processing loop
-    counter = 0
-    while counter < 200:
+    while keep_running.value is True:
         frame = in_queue.get()
         expanded_frame = np.expand_dims(frame, 0)
         output_dict = sess.run(tensor_dict, feed_dict={image_tensor: expanded_frame})
         output_dict['frame'] = frame
         out_queue.put(output_dict)
-        counter += 1
 
 
 def display(in_queue):
@@ -73,8 +70,7 @@ def display(in_queue):
     category_index = label_map_util.create_category_index(categories)
 
     # Processing loop
-    counter = 0
-    while counter < 200:
+    while True:
         output_dict = in_queue.get()
         frame = output_dict['frame']
 
@@ -91,24 +87,37 @@ def display(in_queue):
 
         # Show the marked up frame
         cv2.imshow("Frame", frame)
-        cv2.waitKey(1) & 0xFF
-        counter += 1
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     # Teardown
     cv2.destroyAllWindows()
 
 
 def main():
+    # Setup the queues
     capture_to_detect = multiprocessing.Queue(maxsize=1)
     detect_to_display = multiprocessing.Queue(maxsize=1)
-    capturer = multiprocessing.Process(target=capture, args=(capture_to_detect,))
-    detector = multiprocessing.Process(target=detect, args=(capture_to_detect, detect_to_display))
+    # Setup the shared exit trigger
+    keep_running = multiprocessing.Value(c_bool, True)
+    # Create the pipeline pieces
+    capturer = multiprocessing.Process(target=capture, args=(keep_running, capture_to_detect,))
+    detector = multiprocessing.Process(target=detect, args=(keep_running, capture_to_detect, detect_to_display))
+    # Start the pipeline pieces
     detector.start()
     capturer.start()
+    # Run the "GUI"
     display(detect_to_display)
+    # Signal the pipeline pieces to stop
+    with keep_running.get_lock():
+        keep_running.value = False
+    # Clear out the queues
+    detect_to_display.get()
+    capture_to_detect.get()
+    # Join the pipeline processes
+    capturer.join()
+    detector.join()
 
 
 if __name__ == '__main__':
     main()
-
-
