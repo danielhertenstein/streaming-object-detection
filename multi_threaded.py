@@ -24,26 +24,17 @@ def object_detector(input_queue, output_queue):
             tf.import_graph_def(od_graph_def, name='')
         sess = tf.Session(graph=detection_graph)
 
+    tensor_dict = {
+        'num_detections': detection_graph.get_tensor_by_name('num_detections:0'),
+        'detection_boxes': detection_graph.get_tensor_by_name('detection_boxes:0'),
+        'detection_scores': detection_graph.get_tensor_by_name('detection_scores:0'),
+        'detection_classes': detection_graph.get_tensor_by_name('detection_classes:0')
+    }
+    image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+
     while True:
         frame = input_queue.get()
-
-        # Do the detection
-        tensor_dict = {
-            'num_detections': detection_graph.get_tensor_by_name('num_detections:0'),
-            'detection_boxes': detection_graph.get_tensor_by_name('detection_boxes:0'),
-            'detection_scores': detection_graph.get_tensor_by_name('detection_scores:0'),
-            'detection_classes': detection_graph.get_tensor_by_name('detection_classes:0')
-        }
-        image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-
-        expanded_frame = np.expand_dims(frame, 0)
-        output_dict = sess.run(tensor_dict, feed_dict={image_tensor: expanded_frame})
-
-        output_dict['num_detections'] = int(output_dict['num_detections'][0])
-        output_dict['detection_classes'] = output_dict['detection_classes'][0].astype(np.uint8)
-        output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
-        output_dict['detection_scores'] = output_dict['detection_scores'][0]
-
+        output_dict = sess.run(tensor_dict, feed_dict={image_tensor: frame})
         output_queue.put(output_dict)
 
 
@@ -71,10 +62,15 @@ def main():
         frame = stream.read()
 
         # Give it to the detector process
-        input_queue.put(frame)
+        expanded_frame = np.expand_dims(frame, 0)
+        input_queue.put(expanded_frame)
 
         # Get the detection results
         output_dict = output_queue.get()
+        output_dict['num_detections'] = int(output_dict['num_detections'][0])
+        output_dict['detection_classes'] = output_dict['detection_classes'][0].astype(np.uint8)
+        output_dict['detection_boxes'] = output_dict['detection_boxes'][0]
+        output_dict['detection_scores'] = output_dict['detection_scores'][0]
 
         # Mark up the frame with the boxes
         vis_util.visualize_boxes_and_labels_on_image_array(
