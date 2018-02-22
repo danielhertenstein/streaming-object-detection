@@ -7,7 +7,11 @@ class FPS:
     def __init__(self):
         self._start = None
         self._end = None
-        self._numFrames = 0
+        self._num_frames = 0
+
+    @property
+    def num_frames(self):
+        return self._num_frames
 
     def start(self):
         self._start = datetime.datetime.now()
@@ -17,13 +21,13 @@ class FPS:
         self._end = datetime.datetime.now()
 
     def update(self):
-        self._numFrames += 1
+        self._num_frames += 1
 
     def elapsed(self):
         return (self._end - self._start).total_seconds()
 
     def fps(self):
-        return self._numFrames / self.elapsed()
+        return self._num_frames / self.elapsed()
 
 
 class WebcamWideoStream:
