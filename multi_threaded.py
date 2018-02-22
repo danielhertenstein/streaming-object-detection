@@ -1,6 +1,6 @@
 import cv2
 from multiprocessing import Pool, Queue
-from multiprocessing.queues import Empty, Full
+from multiprocessing.queues import Empty
 import numpy as np
 import os
 import tensorflow as tf
@@ -64,10 +64,8 @@ def main():
         expanded_frame = np.expand_dims(frame, 0)
 
         # Give it to the detector process
-        try:
-            input_queue.put_nowait(expanded_frame)
-        except Full:
-            pass
+        if input_queue.empty():
+            input_queue.put(expanded_frame)
 
         # Get the detection results
         try:
