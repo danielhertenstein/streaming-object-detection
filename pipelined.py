@@ -57,7 +57,7 @@ def detect(keep_running, in_queue, out_queue):
         out_queue.put(output_dict)
 
 
-def display(in_queue):
+def markup(keep_running, in_queue, out_queue):
     # Setup
     # Get labels and categories
     path_to_labels = os.path.join(os.getcwd(), 'object_detection', 'data', 'mscoco_label_map.pbtxt')
@@ -70,7 +70,7 @@ def display(in_queue):
     category_index = label_map_util.create_category_index(categories)
 
     # Processing loop
-    while True:
+    while keep_running.value is True:
         output_dict = in_queue.get()
         frame = output_dict['frame']
 
@@ -85,6 +85,14 @@ def display(in_queue):
             line_thickness=8,
         )
 
+        # Put the frame in the out queue
+        out_queue.put(frame)
+
+
+def display(in_queue):
+    while True:
+        frame = in_queue.get()
+
         # Show the marked up frame
         cv2.imshow("Frame", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -97,26 +105,30 @@ def display(in_queue):
 def main():
     # Setup the queues
     capture_to_detect = multiprocessing.Queue(maxsize=1)
-    detect_to_display = multiprocessing.Queue(maxsize=1)
+    detect_to_markup = multiprocessing.Queue(maxsize=1)
+    markup_to_display = multiprocessing.Queue(maxsize=1)
     # Setup the shared exit trigger
     keep_running = multiprocessing.Value(c_bool, True)
     # Create the pipeline pieces
     capturer = multiprocessing.Process(target=capture, args=(keep_running, capture_to_detect,))
-    detector = multiprocessing.Process(target=detect, args=(keep_running, capture_to_detect, detect_to_display))
+    detector = multiprocessing.Process(target=detect, args=(keep_running, capture_to_detect, detect_to_markup))
+    marker = multiprocessing.Process(target=markup, args=(keep_running, detect_to_markup, markup_to_display))
     # Start the pipeline pieces
     detector.start()
     capturer.start()
+    marker.start()
     # Run the "GUI"
-    display(detect_to_display)
+    display(in_queue=markup_to_display)
     # Signal the pipeline pieces to stop
     with keep_running.get_lock():
         keep_running.value = False
     # Clear out the queues
-    detect_to_display.get()
+    markup_to_display.get()
     capture_to_detect.get()
     # Join the pipeline processes
     capturer.join()
     detector.join()
+    marker.join()
 
 
 if __name__ == '__main__':
