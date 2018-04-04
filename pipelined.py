@@ -5,14 +5,14 @@ import numpy as np
 import os
 import tensorflow as tf
 
-from classes import WebcamWideoStream
+from classes import WebcamVideoStream
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 
 def capture(keep_running, out_queue):
     # Setup
-    stream = WebcamWideoStream(src=0).start()
+    stream = WebcamVideoStream(src=0).start()
 
     # Processing loop
     while keep_running.value is True:
