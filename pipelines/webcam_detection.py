@@ -11,15 +11,7 @@ pipeline_pieces = [
 ]
 
 # Make the pipeline
-pipeline = assembler.make_pipeline(pipeline_pieces)
+pipeline = assembler.Pipeline(pipeline_pieces)
 
-# Start the pipeline
-pipeline.start()
-
-# Enter event loop and pass any messages to the sink
-
-# Signal to the other pipeline pieces to stop
-
-# Empty out all the queues
-
-# Join the queues
+# Run the pipeline
+pipeline.run()
