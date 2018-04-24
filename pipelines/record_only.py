@@ -3,10 +3,10 @@ from pieces import WebcamCapture, Record
 
 
 def main():
-    pipeline = assembler.Pipeline([
-        [WebcamCapture, ],
-        [Record, ],
-    ])
+    pipeline = assembler.Pipeline(
+        pieces=[[WebcamCapture], [Record]],
+        args=[[()], [()]]
+    )
     pipeline.run()
 
 

@@ -5,7 +5,7 @@ import queue
 
 
 class Source:
-    def __init__(self, pieces, keep_running, out_queue):
+    def __init__(self, pieces, args, keep_running, out_queue):
         self.pieces = [piece() for piece in pieces]
         self.keep_running = keep_running
         self.out_queue = out_queue
@@ -26,7 +26,7 @@ class Source:
 
 
 class Node:
-    def __init__(self, pieces, keep_running, in_queue, out_queue):
+    def __init__(self, pieces, args, keep_running, in_queue, out_queue):
         self.pieces = [piece() for piece in pieces]
         self.keep_running = keep_running
         self.in_queue = in_queue
@@ -47,7 +47,7 @@ class Node:
 
 
 class Sink:
-    def __init__(self, pieces, in_queue):
+    def __init__(self, pieces, args, in_queue):
         self.pieces = [piece() for piece in pieces]
         self.in_queue = in_queue
 
@@ -67,14 +67,14 @@ class Sink:
 
 
 class Pipeline:
-    def __init__(self, pieces):
+    def __init__(self, pieces, args):
         self.keep_running = multiprocessing.Value(c_bool, True)
         self.queues = deque(multiprocessing.Queue(maxsize=1) for _ in range(len(pieces)- 1))
         self.pieces = []
 
         # Make the source
         out_queue = self.queues[0]
-        piece = Source(pieces.pop(0), self.keep_running, out_queue)
+        piece = Source(pieces.pop(0), args.pop(0), self.keep_running, out_queue)
         self.pieces.append(multiprocessing.Process(target=piece.main_loop))
         self.queues.rotate(-1)
 
@@ -82,13 +82,13 @@ class Pipeline:
         while len(pieces) > 1:
             in_queue = out_queue
             out_queue = self.queues[0]
-            piece = Node(pieces.pop(0), self.keep_running, in_queue, out_queue)
+            piece = Node(pieces.pop(0), args.pop(0), self.keep_running, in_queue, out_queue)
             self.pieces.append(multiprocessing.Process(target=piece.main_loop))
             self.queues.rotate(-1)
 
         # Make the sink
         in_queue = out_queue
-        self.sink = Sink(pieces.pop(0), in_queue)
+        self.sink = Sink(pieces.pop(0), args.pop(0), in_queue)
 
     def run(self):
         # Start all of the non-sink processes
