@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import time
 import tensorflow as tf
 
 from classes import WebcamVideoStream
@@ -59,7 +60,8 @@ class Display:
 class Record:
     def __init__(self):
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.video_writer = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        self.video_writer = cv2.VideoWriter('{}.avi'.format(timestamp), fourcc, 20.0, (640, 480))
 
     def setup(self):
         pass
@@ -123,3 +125,17 @@ class WebcamCapture:
 
     def teardown(self):
         self.stream.stop()
+
+
+#class PiCapture:
+#    def __init__(self):
+#        self.stream = None
+#
+#    def setup(self):
+#        self.stream = PiVideoStream(src=0).start()
+#
+#    def process(self, data):
+#        return self.stream.read()
+#
+#    def teardown(self):
+#        self.stream.stop()
