@@ -3,6 +3,7 @@ import cv2
 import multiprocessing
 import numpy as np
 import os
+import queue
 import tensorflow as tf
 
 from classes import WebcamVideoStream
@@ -57,7 +58,7 @@ def detect(keep_running, in_queue, out_queue):
         out_queue.put(output_dict)
 
 
-def markup(keep_running, in_queue, out_queue):
+def display(in_queue):
     # Setup
     # Get labels and categories
     path_to_labels = os.path.join(os.getcwd(), 'object_detection', 'data', 'mscoco_label_map.pbtxt')
@@ -70,7 +71,7 @@ def markup(keep_running, in_queue, out_queue):
     category_index = label_map_util.create_category_index(categories)
 
     # Processing loop
-    while keep_running.value is True:
+    while True:
         output_dict = in_queue.get()
         frame = output_dict['frame']
 
@@ -85,14 +86,6 @@ def markup(keep_running, in_queue, out_queue):
             line_thickness=8,
         )
 
-        # Put the frame in the out queue
-        out_queue.put(frame)
-
-
-def display(in_queue):
-    while True:
-        frame = in_queue.get()
-
         # Show the marked up frame
         cv2.imshow("Frame", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -105,30 +98,41 @@ def display(in_queue):
 def main():
     # Setup the queues
     capture_to_detect = multiprocessing.Queue(maxsize=1)
-    detect_to_markup = multiprocessing.Queue(maxsize=1)
-    markup_to_display = multiprocessing.Queue(maxsize=1)
+    detect_to_display = multiprocessing.Queue(maxsize=1)
+    queues = [capture_to_detect, detect_to_display]
+
     # Setup the shared exit trigger
     keep_running = multiprocessing.Value(c_bool, True)
+
     # Create the pipeline pieces
     capturer = multiprocessing.Process(target=capture, args=(keep_running, capture_to_detect,))
-    detector = multiprocessing.Process(target=detect, args=(keep_running, capture_to_detect, detect_to_markup))
-    marker = multiprocessing.Process(target=markup, args=(keep_running, detect_to_markup, markup_to_display))
+    detector = multiprocessing.Process(target=detect, args=(keep_running, capture_to_detect, detect_to_display))
+    pieces = [capturer, detector]
+
     # Start the pipeline pieces
-    detector.start()
-    capturer.start()
-    marker.start()
+    for piece in pieces:
+        piece.start()
+
     # Run the "GUI"
-    display(in_queue=markup_to_display)
+    display(in_queue=detect_to_display)
+
     # Signal the pipeline pieces to stop
     with keep_running.get_lock():
         keep_running.value = False
+
     # Clear out the queues
-    markup_to_display.get()
-    capture_to_detect.get()
+    queues_to_clear = len(queues)
+    while queues_to_clear > 0:
+        for node_queue in queues:
+            try:
+                node_queue.get_nowait()
+                queues_to_clear -= 1
+            except queue.Empty:
+                pass
+
     # Join the pipeline processes
-    capturer.join()
-    detector.join()
-    marker.join()
+    for piece in pieces:
+        piece.join()
 
 
 if __name__ == '__main__':
