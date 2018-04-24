@@ -95,6 +95,45 @@ def display(in_queue):
     cv2.destroyAllWindows()
 
 
+def record(in_queue):
+    # Setup
+    # Get labels and categories
+    path_to_labels = os.path.join(os.getcwd(), 'object_detection', 'data', 'mscoco_label_map.pbtxt')
+    label_map = label_map_util.load_labelmap(path_to_labels)
+    categories = label_map_util.convert_label_map_to_categories(
+        label_map,
+        max_num_classes=90,
+        use_display_name=True
+    )
+    category_index = label_map_util.create_category_index(categories)
+
+    # Initialize the video_writer
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    video_writer = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+
+    # Processing loop
+    while True:
+        output_dict = in_queue.get()
+        frame = output_dict['frame']
+
+        # Mark up the frame with the boxes
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            frame,
+            output_dict['detection_boxes'][0],
+            output_dict['detection_classes'][0].astype(np.uint8),
+            output_dict['detection_scores'][0],
+            category_index,
+            use_normalized_coordinates=True,
+            line_thickness=8,
+        )
+
+        video_writer.write(frame)
+
+    # Teardown
+    video_writer.release()
+    cv2.destroyAllWindows()
+
+
 def main():
     # Setup the queues
     capture_to_detect = multiprocessing.Queue(maxsize=1)
@@ -114,7 +153,8 @@ def main():
         piece.start()
 
     # Run the "GUI"
-    display(in_queue=detect_to_display)
+    #display(in_queue=detect_to_display)
+    record(in_queue=detect_to_display)
 
     # Signal the pipeline pieces to stop
     with keep_running.get_lock():
