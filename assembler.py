@@ -6,7 +6,7 @@ import queue
 
 class Source:
     def __init__(self, pieces, args, keep_running, out_queue):
-        self.pieces = [piece() for piece in pieces]
+        self.pieces = [piece(arg) for piece, arg in zip(pieces, args)]
         self.keep_running = keep_running
         self.out_queue = out_queue
 
@@ -27,7 +27,7 @@ class Source:
 
 class Node:
     def __init__(self, pieces, args, keep_running, in_queue, out_queue):
-        self.pieces = [piece() for piece in pieces]
+        self.pieces = [piece(arg) for piece, arg in zip(pieces, args)]
         self.keep_running = keep_running
         self.in_queue = in_queue
         self.out_queue = out_queue
@@ -48,7 +48,7 @@ class Node:
 
 class Sink:
     def __init__(self, pieces, args, in_queue):
-        self.pieces = [piece() for piece in pieces]
+        self.pieces = [piece(arg) for piece, arg in zip(pieces, args)]
         self.in_queue = in_queue
 
     def main_loop(self):
