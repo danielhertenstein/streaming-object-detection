@@ -9,7 +9,7 @@ from object_detection.utils import visualization_utils as vis_util
 
 
 CWD = os.getcwd()
-MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
+MODEL_NAME = 'ssd_mobilenet_v2_coco_2018_03_29'
 PATH_TO_CKPT = os.path.join(CWD, 'object_detection', MODEL_NAME, 'frozen_inference_graph.pb')
 PATH_TO_LABELS = os.path.join(CWD, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90

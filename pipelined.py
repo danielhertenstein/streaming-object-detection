@@ -27,7 +27,7 @@ def capture(keep_running, out_queue):
 def detect(keep_running, in_queue, out_queue):
     # Setup
     cwd = os.getcwd()
-    model_name = 'ssd_mobilenet_v1_coco_2017_11_17'
+    model_name = 'ssd_mobilenet_v2_coco_2018_03_29'
     path_to_ckpt = os.path.join(cwd, 'object_detection', model_name, 'frozen_inference_graph.pb')
 
     # Load model into memory
