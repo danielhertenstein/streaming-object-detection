@@ -10,7 +10,7 @@ from object_detection.utils import visualization_utils as vis_util
 
 
 class Markup:
-    def __init__(self):
+    def __init__(self, args):
         self.category_index = None
 
     def setup(self):
@@ -44,6 +44,9 @@ class Markup:
 
 
 class Display:
+    def __init__(self, args):
+        pass
+
     def setup(self):
         pass
 
@@ -58,7 +61,7 @@ class Display:
 
 
 class Record:
-    def __init__(self):
+    def __init__(self, args):
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.video_writer = cv2.VideoWriter('{}.avi'.format(timestamp), fourcc, 20.0, (640, 480))
@@ -75,7 +78,7 @@ class Record:
 
 
 class Detect:
-    def __init__(self):
+    def __init__(self, args):
         self.sess = None
         self.tensor_dict = None
         self.image_tensor = None
@@ -114,7 +117,7 @@ class Detect:
 
 
 class WebcamCapture:
-    def __init__(self):
+    def __init__(self, args):
         self.stream = None
 
     def setup(self):
@@ -128,7 +131,7 @@ class WebcamCapture:
 
 
 #class PiCapture:
-#    def __init__(self):
+#    def __init__(self, args):
 #        self.stream = None
 #
 #    def setup(self):
