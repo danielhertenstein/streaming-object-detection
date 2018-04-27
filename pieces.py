@@ -10,7 +10,7 @@ from object_detection.utils import visualization_utils as vis_util
 
 
 class Markup:
-    def __init__(self, args):
+    def __init__(self, **kwargs):
         self.category_index = None
 
     def setup(self):
@@ -44,7 +44,7 @@ class Markup:
 
 
 class Display:
-    def __init__(self, args):
+    def __init__(self, **kwargs):
         pass
 
     def setup(self):
@@ -61,10 +61,13 @@ class Display:
 
 
 class Record:
-    def __init__(self, args):
+    def __init__(self, **kwargs):
+        framerate = kwargs.get('framerate', 60.0)
+        resolution = kwargs.get('resolution', (640, 480))
+
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        self.video_writer = cv2.VideoWriter('{}.avi'.format(timestamp), fourcc, 20.0, (640, 480))
+        self.video_writer = cv2.VideoWriter('{}.avi'.format(timestamp), fourcc, framerate, resolution)
 
     def setup(self):
         pass
@@ -78,7 +81,7 @@ class Record:
 
 
 class Detect:
-    def __init__(self, args):
+    def __init__(self, **kwargs):
         self.sess = None
         self.tensor_dict = None
         self.image_tensor = None
@@ -117,7 +120,7 @@ class Detect:
 
 
 class WebcamCapture:
-    def __init__(self, args):
+    def __init__(self, **kwargs):
         self.stream = None
 
     def setup(self):
@@ -131,7 +134,7 @@ class WebcamCapture:
 
 
 #class PiCapture:
-#    def __init__(self, args):
+#    def __init__(self, **kwargs):
 #        self.stream = None
 #
 #    def setup(self):

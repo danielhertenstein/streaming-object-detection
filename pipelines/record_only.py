@@ -5,7 +5,7 @@ from pieces import WebcamCapture, Record
 def main():
     pipeline = assembler.Pipeline(
         pieces=[[WebcamCapture], [Record]],
-        args=[[{}], [{}]]
+        options=[[{}], [{'framerate': 120.0}]]
     )
     pipeline.run()
 
