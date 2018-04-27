@@ -67,13 +67,18 @@ class Record:
 
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         timestamp = time.strftime("%Y%m%d-%H%M%S")
+
         self.video_writer = cv2.VideoWriter('{}.avi'.format(timestamp), fourcc, framerate, resolution)
+        self.save_interval = 1. / framerate
+        self.timer = time.time()
 
     def setup(self):
         pass
 
     def process(self, data):
-        self.video_writer.write(data)
+        if time.time() - self.timer >= self.save_interval:
+            self.video_writer.write(data)
+            self.timer = time.time()
         return True
 
     def teardown(self):
