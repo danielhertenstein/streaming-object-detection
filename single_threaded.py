@@ -3,7 +3,7 @@ import numpy as np
 import os
 import tensorflow as tf
 
-from classes import FPS
+from video_streams import FPS
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 

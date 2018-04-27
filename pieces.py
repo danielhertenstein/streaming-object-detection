@@ -4,7 +4,7 @@ import os
 import time
 import tensorflow as tf
 
-from classes import WebcamVideoStream
+from video_streams import WebcamVideoStream
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
@@ -143,7 +143,7 @@ class WebcamCapture:
 #        self.stream = None
 #
 #    def setup(self):
-#        self.stream = PiVideoStream(src=0).start()
+#        self.stream = PiVideoStream().start()
 #
 #    def process(self, data):
 #        return self.stream.read()

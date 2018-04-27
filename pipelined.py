@@ -6,7 +6,7 @@ import os
 import queue
 import tensorflow as tf
 
-from classes import WebcamVideoStream
+from video_streams import WebcamVideoStream
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
