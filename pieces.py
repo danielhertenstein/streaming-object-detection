@@ -4,7 +4,7 @@ import os
 import time
 import tensorflow as tf
 
-from video_streams import WebcamVideoStream
+from video_streams import WebcamVideoStream, PiVideoStream
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
@@ -15,7 +15,8 @@ class Markup:
 
     def setup(self):
         # Get labels and categories
-        path_to_labels = os.path.join(os.getcwd(), 'object_detection', 'data', 'mscoco_label_map.pbtxt')
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        path_to_labels = os.path.join(this_dir, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
         label_map = label_map_util.load_labelmap(path_to_labels)
         categories = label_map_util.convert_label_map_to_categories(
             label_map,
@@ -64,8 +65,9 @@ class Record:
     def __init__(self, **kwargs):
         framerate = kwargs.get('framerate', 60.0)
         resolution = kwargs.get('resolution', (640, 480))
+        codec = kwargs.get('codec', 'MJPG')
 
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fourcc = cv2.VideoWriter_fourcc(*codec)
         timestamp = time.strftime("%Y%m%d-%H%M%S")
 
         self.video_writer = cv2.VideoWriter('{}.avi'.format(timestamp), fourcc, framerate, resolution)
@@ -92,9 +94,9 @@ class Detect:
         self.image_tensor = None
 
     def setup(self):
-        cwd = os.getcwd()
+        this_dir = os.path.dirname(os.path.realpath(__file__))
         model_name = 'ssd_mobilenet_v2_coco_2018_03_29'
-        path_to_ckpt = os.path.join(cwd, 'object_detection', model_name, 'frozen_inference_graph.pb')
+        path_to_ckpt = os.path.join(this_dir, 'object_detection', model_name, 'frozen_inference_graph.pb')
 
         # Load model into memory
         detection_graph = tf.Graph()
@@ -138,15 +140,15 @@ class WebcamCapture:
         self.stream.stop()
 
 
-#class PiCapture:
-#    def __init__(self, **kwargs):
-#        self.stream = None
-#
-#    def setup(self):
-#        self.stream = PiVideoStream().start()
-#
-#    def process(self, data):
-#        return self.stream.read()
-#
-#    def teardown(self):
-#        self.stream.stop()
+class PiCapture:
+    def __init__(self, **kwargs):
+        self.stream = None
+
+    def setup(self):
+        self.stream = PiVideoStream().start()
+
+    def process(self, data):
+        return self.stream.read()
+
+    def teardown(self):
+        self.stream.stop()
